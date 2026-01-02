@@ -1,0 +1,7 @@
+{
+  "name": "Viral Math Challenge Pro",
+  "description": "A high-end BODMAS/PEMDAS challenge generator for social media creators, featuring AI-driven virality scoring and advanced typography controls.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
