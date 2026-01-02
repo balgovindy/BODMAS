@@ -17,7 +17,8 @@ import {
   Minus,
   RefreshCw,
   Box,
-  MoveVertical
+  MoveVertical,
+  Edit3
 } from 'lucide-react';
 
 interface Props {
@@ -140,6 +141,21 @@ const Sidebar: React.FC<Props> = ({ state, setState, onGenerate }) => {
         onToggle={() => toggleSection('general')}
       >
         <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+          <div className="space-y-2">
+            <label className="text-xs text-slate-400 font-semibold block uppercase tracking-wider">Manual Question Input</label>
+            <div className="relative">
+              <textarea 
+                value={state.question}
+                onChange={(e) => update('question', e.target.value)}
+                placeholder="Enter math equation e.g. (1+2)/3"
+                rows={2}
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+              />
+              <Edit3 className="absolute right-3 bottom-3 w-4 h-4 text-slate-300 pointer-events-none" />
+            </div>
+            <p className="text-[10px] text-slate-400 italic">Use / for fractions, e.g., (8+4)/3</p>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-slate-400 font-semibold block mb-1">Difficulty</label>

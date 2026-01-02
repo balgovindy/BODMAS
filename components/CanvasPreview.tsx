@@ -6,10 +6,9 @@ import { BadgeCheck } from 'lucide-react';
 
 interface Props {
   state: AppState;
-  canvasRef: React.RefObject<HTMLDivElement>;
 }
 
-const CanvasPreview: React.FC<Props> = ({ state, canvasRef }) => {
+const CanvasPreview: React.FC<Props & { canvasRef: React.RefObject<HTMLDivElement> }> = ({ state, canvasRef }) => {
   const isPortrait = state.platform === Platform.PORTRAIT;
   
   const containerStyle: React.CSSProperties = {
@@ -31,7 +30,6 @@ const CanvasPreview: React.FC<Props> = ({ state, canvasRef }) => {
 
   const footerOpacity = state.fontColor === '#ffffff' ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)';
 
-  // Logic for the question container styling - removed hardcoded paddings
   const getQuestionContainerClass = () => {
     switch (state.questionBgStyle) {
         case 'ribbon':
@@ -69,25 +67,90 @@ const CanvasPreview: React.FC<Props> = ({ state, canvasRef }) => {
 
   const rank = getRankInfo();
 
+  /**
+   * Enhanced rendering for stacked fractions.
+   * Handles:
+   * 1. Simple digits: 1/2
+   * 2. Manual grouped numerator: (1+2)/3
+   * 3. Manual grouped denominator: 1/(2+3)
+   * 4. Fully grouped: (1+2)/(3+4)
+   */
+  const renderQuestionText = (text: string) => {
+    // This regex looks for: 
+    // Group 1: Optional brackets around characters followed by a slash
+    // Group 2: The slash
+    // Group 3: Characters followed by optional brackets
+    // It captures: (expression)/expression, expression/(expression), etc.
+    // Improved regex to handle nested brackets would be complex, so we handle standard common viral math patterns.
+    const fractionRegex = /(\((?:[^)(]+)\)|[\w\d⁰¹²³⁴⁵⁶⁷⁸⁹]+)\s*\/\s*(\((?:[^)(]+)\)|[\w\d⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g;
+    
+    const elements = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = fractionRegex.exec(text)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        elements.push(<span key={`text-${lastIndex}`}>{text.substring(lastIndex, match.index)}</span>);
+      }
+
+      let numerator = match[1].trim();
+      let denominator = match[2].trim();
+
+      // Remove surrounding brackets for stacked rendering if they wrap the entire component
+      if (numerator.startsWith('(') && numerator.endsWith(')')) {
+        numerator = numerator.substring(1, numerator.length - 1);
+      }
+      if (denominator.startsWith('(') && denominator.endsWith(')')) {
+        denominator = denominator.substring(1, denominator.length - 1);
+      }
+
+      elements.push(
+        <span 
+          key={`frac-${match.index}`} 
+          className="inline-flex flex-col items-center justify-center align-middle mx-1.5 leading-none"
+          style={{ verticalAlign: 'middle', marginTop: '-0.15em' }}
+        >
+          <span style={{ fontSize: '0.7em' }} className="mb-[0.12em] whitespace-nowrap">{numerator}</span>
+          <div 
+            style={{ 
+              height: Math.max(1, Math.round(state.fontSize / 25)) + 'px',
+              width: '120%',
+              backgroundColor: state.fontColor,
+              opacity: 0.95
+            }} 
+          />
+          <span style={{ fontSize: '0.7em' }} className="mt-[0.12em] whitespace-nowrap">{denominator}</span>
+        </span>
+      );
+
+      lastIndex = fractionRegex.lastIndex;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      elements.push(<span key={`text-end`}>{text.substring(lastIndex)}</span>);
+    }
+
+    return elements.length > 0 ? elements : <span>{text}</span>;
+  };
+
   return (
     <div 
       ref={canvasRef}
       style={containerStyle}
       className={`relative flex flex-col items-center justify-center overflow-hidden transition-all duration-300 rounded-lg shadow-2xl ${getBgClass()}`}
     >
-      {/* Background Overlay for Food/Busy Backgrounds */}
       {state.bgStyle === BgStyle.FOOD && (
         <div className="absolute inset-0 bg-black/40 z-0"></div>
       )}
 
-      {/* Background Math Icons Decor */}
       <div className="absolute inset-0 opacity-10 pointer-events-none select-none flex flex-wrap gap-12 p-12 justify-center items-center overflow-hidden text-6xl font-black z-0">
         {Array.from({length: 12}).map((_, i) => (
-          <span key={i} className="rotate-12">+ − × ÷ √</span>
+          <span key={i} className="rotate-12 select-none">+ − × ÷ √</span>
         ))}
       </div>
 
-      {/* Header */}
       {state.headerEnabled && (
         <div className={`absolute top-6 z-10 w-full px-4 flex justify-center`}>
           <div 
@@ -109,7 +172,6 @@ const CanvasPreview: React.FC<Props> = ({ state, canvasRef }) => {
         </div>
       )}
 
-      {/* Logo */}
       {state.logoUrl && (
         <div className={`absolute z-20 ${
           state.logoPosition === LogoPosition.TOP_LEFT ? 'top-4 left-4' : 
@@ -122,7 +184,6 @@ const CanvasPreview: React.FC<Props> = ({ state, canvasRef }) => {
         </div>
       )}
 
-      {/* Question Content Block with Dynamic Positioning */}
       <div 
         className="relative z-10 flex flex-col items-center justify-center text-center px-4 w-full transition-transform duration-300"
         style={{ transform: `translateY(${state.questionYOffset}px)` }}
@@ -143,19 +204,22 @@ const CanvasPreview: React.FC<Props> = ({ state, canvasRef }) => {
                 fontWeight: state.fontWeight,
                 letterSpacing: `${state.letterSpacing}px`,
                 lineHeight: state.lineSpacing,
-                textShadow: state.showShadow && state.questionBgStyle === 'none' ? '0 10px 30px rgba(0,0,0,0.3)' : 'none'
+                textShadow: state.showShadow && state.questionBgStyle === 'none' ? '0 10px 30px rgba(0,0,0,0.3)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                justifyContent: 'center'
               }}
               className={`
                 transition-all duration-300
                 ${state.showGlow ? 'drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]' : ''}
               `}
             >
-              {state.question}
+              {renderQuestionText(state.question)}
             </h2>
         </div>
       </div>
 
-      {/* Verified Rank Booster Badge */}
       {state.showRankBadge && (
         <div className={`absolute z-20 transition-all duration-500 ${getRankPosClass()}`}>
           <div className={`${rank.color} text-white font-black px-4 py-2 rounded-xl shadow-2xl flex flex-col items-center transition-all duration-300 border-2 border-white/50 group`}>
@@ -173,7 +237,6 @@ const CanvasPreview: React.FC<Props> = ({ state, canvasRef }) => {
         </div>
       )}
 
-      {/* Footer CTA */}
       {state.showCommentFooter && (
         <div className="absolute bottom-6 w-full px-8 text-center z-10">
           <p 
