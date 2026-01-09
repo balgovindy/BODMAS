@@ -21,17 +21,20 @@ const isDarkColor = (color: string) => {
 };
 
 const App: React.FC = () => {
+  // Generate a fresh initial question
+  const initialQuestion = generateBODMAS(Difficulty.TRICKY, false, false, false);
+
   const [state, setState] = useState<AppState>({
-    question: "8 ÷ 2(2 + 2)",
-    answer: 16,
-    difficulty: Difficulty.MEDIUM,
+    question: initialQuestion.question,
+    answer: initialQuestion.answer,
+    difficulty: Difficulty.TRICKY,
     platform: Platform.SQUARE,
     useFactorials: false,
     useExponents: false,
     useFractions: false,
-    fontFamily: FONTS[0].family,
-    fontSize: 40,
-    fontWeight: "800",
+    fontFamily: FONTS[0].family, // Poppins
+    fontSize: 50,
+    fontWeight: "700",
     letterSpacing: 0,
     lineSpacing: 1.2,
     fontColor: "#000000",
@@ -41,9 +44,10 @@ const App: React.FC = () => {
     headerFont: FONTS[0].family,
     headerStyle: 'badge',
     questionBgStyle: 'none',
-    questionPaddingX: 12,
-    questionPaddingY: 24,
+    questionPaddingX: 12, // Default 12px
+    questionPaddingY: 12, // Default 12px
     questionYOffset: 0,
+    questionBorderRadius: 24,
     bgStyle: BgStyle.GRADIENT,
     bgColors: BG_PRESETS[BgStyle.GRADIENT].colors,
     customBgColor: '#4f46e5',
@@ -56,6 +60,10 @@ const App: React.FC = () => {
     showCommentFooter: true,
     showRankBadge: false,
     rankPosition: RankPosition.TOP_LEFT,
+    showWatermark: false,
+    watermarkText: 'Maths Mint',
+    watermarkAlign: 'right',
+    watermarkOffset: 5, // Default 5px
   });
 
   const [virality, setVirality] = useState<ViralityAnalysis | null>(null);
@@ -64,8 +72,12 @@ const App: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const handleGenerate = () => {
-    const { question, answer } = generateBODMAS(state.difficulty, state.useFactorials, state.useExponents, state.useFractions);
-    setState(prev => ({ ...prev, question, answer }));
+    // Ensure we always get a different question by looping until it's new (simple version)
+    let newQ = generateBODMAS(state.difficulty, state.useFactorials, state.useExponents, state.useFractions);
+    while (newQ.question === state.question) {
+      newQ = generateBODMAS(state.difficulty, state.useFactorials, state.useExponents, state.useFractions);
+    }
+    setState(prev => ({ ...prev, question: newQ.question, answer: newQ.answer }));
   };
 
   const handleAnalyze = async () => {

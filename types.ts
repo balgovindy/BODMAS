@@ -74,6 +74,7 @@ export interface AppState {
   questionPaddingX: number;
   questionPaddingY: number;
   questionYOffset: number;
+  questionBorderRadius: number;
 
   // Background
   bgStyle: BgStyle;
@@ -92,6 +93,12 @@ export interface AppState {
   showCommentFooter: boolean;
   showRankBadge: boolean;
   rankPosition: RankPosition;
+
+  // Watermark
+  showWatermark: boolean;
+  watermarkText: string;
+  watermarkAlign: 'left' | 'center' | 'right';
+  watermarkOffset: number;
 }
 
 export interface ViralityAnalysis {

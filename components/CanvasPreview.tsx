@@ -6,9 +6,10 @@ import { BadgeCheck } from 'lucide-react';
 
 interface Props {
   state: AppState;
+  canvasRef: React.RefObject<HTMLDivElement>;
 }
 
-const CanvasPreview: React.FC<Props & { canvasRef: React.RefObject<HTMLDivElement> }> = ({ state, canvasRef }) => {
+const CanvasPreview: React.FC<Props> = ({ state, canvasRef }) => {
   const isPortrait = state.platform === Platform.PORTRAIT;
   
   const containerStyle: React.CSSProperties = {
@@ -33,13 +34,13 @@ const CanvasPreview: React.FC<Props & { canvasRef: React.RefObject<HTMLDivElemen
   const getQuestionContainerClass = () => {
     switch (state.questionBgStyle) {
         case 'ribbon':
-            return 'bg-red-600 rotate-1 shadow-xl rounded-sm';
+            return 'bg-red-600 rotate-1 shadow-xl';
         case 'badge':
-            return 'bg-indigo-600 rounded-3xl shadow-2xl border-4 border-white/20';
+            return 'bg-indigo-600 shadow-2xl border-4 border-white/20';
         case 'glass':
-            return 'bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-lg';
+            return 'bg-white/10 backdrop-blur-md border border-white/20 shadow-lg';
         case 'minimal':
-            return 'bg-white/90 rounded-xl shadow-lg';
+            return 'bg-white/90 shadow-lg';
         default:
             return '';
     }
@@ -76,12 +77,6 @@ const CanvasPreview: React.FC<Props & { canvasRef: React.RefObject<HTMLDivElemen
    * 4. Fully grouped: (1+2)/(3+4)
    */
   const renderQuestionText = (text: string) => {
-    // This regex looks for: 
-    // Group 1: Optional brackets around characters followed by a slash
-    // Group 2: The slash
-    // Group 3: Characters followed by optional brackets
-    // It captures: (expression)/expression, expression/(expression), etc.
-    // Improved regex to handle nested brackets would be complex, so we handle standard common viral math patterns.
     const fractionRegex = /(\((?:[^)(]+)\)|[\w\d⁰¹²³⁴⁵⁶⁷⁸⁹]+)\s*\/\s*(\((?:[^)(]+)\)|[\w\d⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g;
     
     const elements = [];
@@ -89,7 +84,6 @@ const CanvasPreview: React.FC<Props & { canvasRef: React.RefObject<HTMLDivElemen
     let match;
 
     while ((match = fractionRegex.exec(text)) !== null) {
-      // Add text before the match
       if (match.index > lastIndex) {
         elements.push(<span key={`text-${lastIndex}`}>{text.substring(lastIndex, match.index)}</span>);
       }
@@ -97,7 +91,6 @@ const CanvasPreview: React.FC<Props & { canvasRef: React.RefObject<HTMLDivElemen
       let numerator = match[1].trim();
       let denominator = match[2].trim();
 
-      // Remove surrounding brackets for stacked rendering if they wrap the entire component
       if (numerator.startsWith('(') && numerator.endsWith(')')) {
         numerator = numerator.substring(1, numerator.length - 1);
       }
@@ -127,7 +120,6 @@ const CanvasPreview: React.FC<Props & { canvasRef: React.RefObject<HTMLDivElemen
       lastIndex = fractionRegex.lastIndex;
     }
 
-    // Add remaining text
     if (lastIndex < text.length) {
       elements.push(<span key={`text-end`}>{text.substring(lastIndex)}</span>);
     }
@@ -189,12 +181,13 @@ const CanvasPreview: React.FC<Props & { canvasRef: React.RefObject<HTMLDivElemen
         style={{ transform: `translateY(${state.questionYOffset}px)` }}
       >
         <div 
-          className={`transition-all duration-500 flex items-center justify-center ${getQuestionContainerClass()}`}
+          className={`transition-all duration-500 flex flex-col items-center justify-center relative ${getQuestionContainerClass()}`}
           style={{
              paddingLeft: state.questionBgStyle !== 'none' ? `${state.questionPaddingX}px` : '0px',
              paddingRight: state.questionBgStyle !== 'none' ? `${state.questionPaddingX}px` : '0px',
              paddingTop: state.questionBgStyle !== 'none' ? `${state.questionPaddingY}px` : '0px',
              paddingBottom: state.questionBgStyle !== 'none' ? `${state.questionPaddingY}px` : '0px',
+             borderRadius: state.questionBgStyle !== 'none' ? `${state.questionBorderRadius}px` : undefined,
           }}
         >
             <h2 
@@ -217,6 +210,22 @@ const CanvasPreview: React.FC<Props & { canvasRef: React.RefObject<HTMLDivElemen
             >
               {renderQuestionText(state.question)}
             </h2>
+            
+            {state.showWatermark && (
+              <div 
+                style={{ 
+                  fontFamily: "'Dancing Script', cursive",
+                  fontSize: '10px',
+                  color: state.fontColor,
+                  width: '100%',
+                  textAlign: state.watermarkAlign,
+                  marginTop: `${state.watermarkOffset}px`,
+                  opacity: 0.6
+                }}
+              >
+                {state.watermarkText}
+              </div>
+            )}
         </div>
       </div>
 

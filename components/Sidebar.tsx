@@ -18,7 +18,13 @@ import {
   RefreshCw,
   Box,
   MoveVertical,
-  Edit3
+  Edit3,
+  Waves,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Maximize2,
+  TallyAround
 } from 'lucide-react';
 
 interface Props {
@@ -61,7 +67,8 @@ const Sidebar: React.FC<Props> = ({ state, setState, onGenerate }) => {
     header: false,
     boosters: false,
     typo: false,
-    qstyling: true
+    qstyling: true,
+    watermark: false
   });
 
   const toggleSection = (key: string) => {
@@ -87,14 +94,19 @@ const Sidebar: React.FC<Props> = ({ state, setState, onGenerate }) => {
     update('fontSize', Math.min(250, Math.max(10, state.fontSize + delta)));
   };
 
-  const adjustLayoutValue = (key: 'questionYOffset' | 'questionPaddingX' | 'questionPaddingY', delta: number) => {
+  const adjustLayoutValue = (key: 'questionYOffset' | 'questionPaddingX' | 'questionPaddingY' | 'watermarkOffset' | 'questionBorderRadius' | 'letterSpacing' | 'lineSpacing', delta: number) => {
     const limits: Record<string, { min: number, max: number }> = {
       questionYOffset: { min: -300, max: 300 },
       questionPaddingX: { min: 0, max: 150 },
-      questionPaddingY: { min: 0, max: 100 }
+      questionPaddingY: { min: 0, max: 100 },
+      watermarkOffset: { min: 0, max: 100 },
+      questionBorderRadius: { min: 0, max: 100 },
+      letterSpacing: { min: -10, max: 50 },
+      lineSpacing: { min: 0.5, max: 3 }
     };
     const { min, max } = limits[key];
-    update(key, Math.min(max, Math.max(min, (state[key] as number) + delta)));
+    const newValue = (state[key] as number) + delta;
+    update(key, Math.min(max, Math.max(min, Number(newValue.toFixed(2)))));
   };
 
   const shuffleFood = () => {
@@ -106,7 +118,7 @@ const Sidebar: React.FC<Props> = ({ state, setState, onGenerate }) => {
 
   return (
     <div className="space-y-1 pb-10">
-      {/* 1. Logo Selection */}
+      {/* 1. Brand Logo */}
       <CollapsibleSection
         title="Brand Logo"
         icon={<ImageIcon className="w-4 h-4" />}
@@ -216,7 +228,7 @@ const Sidebar: React.FC<Props> = ({ state, setState, onGenerate }) => {
         </div>
       </CollapsibleSection>
 
-      {/* 3. Background System */}
+      {/* 3. Background Style */}
       <CollapsibleSection
         title="Background Style"
         icon={<Palette className="w-4 h-4" />}
@@ -274,7 +286,7 @@ const Sidebar: React.FC<Props> = ({ state, setState, onGenerate }) => {
         </div>
       </CollapsibleSection>
 
-      {/* 4. Question Container styling */}
+      {/* 4. Question Visibility styling */}
       <CollapsibleSection
         title="Question Visibility"
         icon={<Box className="w-4 h-4" />}
@@ -386,6 +398,36 @@ const Sidebar: React.FC<Props> = ({ state, setState, onGenerate }) => {
                     className="w-full accent-indigo-600 cursor-pointer"
                   />
                 </div>
+                {/* Border Radius Control */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-slate-400 font-semibold uppercase">Border Radius</label>
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => adjustLayoutValue('questionBorderRadius', -1)}
+                        className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 active:scale-95 transition-all text-slate-600"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="text-xs font-mono text-indigo-600 w-10 text-center">{state.questionBorderRadius}px</span>
+                      <button 
+                        onClick={() => adjustLayoutValue('questionBorderRadius', 1)}
+                        className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 active:scale-95 transition-all text-slate-600"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
+                    <input 
+                      type="range" min="0" max="100" step="1"
+                      value={state.questionBorderRadius}
+                      onChange={(e) => update('questionBorderRadius', parseInt(e.target.value))}
+                      className="w-full accent-indigo-600 cursor-pointer"
+                    />
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -477,7 +519,88 @@ const Sidebar: React.FC<Props> = ({ state, setState, onGenerate }) => {
         </div>
       </CollapsibleSection>
 
-      {/* 7. Typography (Font Size Reordered to Bottom) */}
+      {/* 7. Watermark Settings */}
+      <CollapsibleSection
+        title="Watermark"
+        icon={<Waves className="w-4 h-4" />}
+        isOpen={openSections.watermark}
+        onToggle={() => toggleSection('watermark')}
+      >
+        <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-bold text-slate-700">Show Watermark</label>
+            <input 
+              type="checkbox" 
+              checked={state.showWatermark}
+              onChange={(e) => update('showWatermark', e.target.checked)}
+              className="w-4 h-4 accent-indigo-600 cursor-pointer"
+            />
+          </div>
+          {state.showWatermark && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs text-slate-400 font-semibold block uppercase tracking-wider">Watermark Text</label>
+                <input 
+                  type="text"
+                  value={state.watermarkText}
+                  onChange={(e) => update('watermarkText', e.target.value)}
+                  placeholder="e.g. Maths Mint"
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs text-slate-400 font-semibold block uppercase tracking-wider">Alignment</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'left', icon: <AlignLeft className="w-4 h-4" /> },
+                    { id: 'center', icon: <AlignCenter className="w-4 h-4" /> },
+                    { id: 'right', icon: <AlignRight className="w-4 h-4" /> }
+                  ].map(align => (
+                    <button
+                      key={align.id}
+                      onClick={() => update('watermarkAlign', align.id)}
+                      className={`flex items-center justify-center p-2 rounded-lg border-2 transition-all ${
+                        state.watermarkAlign === align.id ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'bg-white text-slate-400 border-slate-100 hover:border-indigo-200'
+                      }`}
+                    >
+                      {align.icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Top Offset ({state.watermarkOffset}px)</label>
+                  <div className="flex items-center gap-1">
+                    <button 
+                      onClick={() => adjustLayoutValue('watermarkOffset', -1)}
+                      className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 active:scale-95 transition-all text-slate-600"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </button>
+                    <button 
+                      onClick={() => adjustLayoutValue('watermarkOffset', 1)}
+                      className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 active:scale-95 transition-all text-slate-600"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+                <input 
+                  type="range" min="0" max="100" step="1"
+                  value={state.watermarkOffset}
+                  onChange={(e) => update('watermarkOffset', parseInt(e.target.value))}
+                  className="w-full accent-indigo-600 cursor-pointer"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </CollapsibleSection>
+
+      {/* 8. Typography (Font Size Reordered to Bottom) */}
       <CollapsibleSection
         title="Typography"
         icon={<Type className="w-4 h-4" />}
@@ -516,7 +639,64 @@ const Sidebar: React.FC<Props> = ({ state, setState, onGenerate }) => {
               </select>
             </div>
           </div>
-          <div className="flex items-center justify-between">
+
+          <div className="space-y-4 pt-2 border-t border-slate-200">
+            {/* Letter Spacing Control */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Letter Spacing ({state.letterSpacing}px)</label>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => adjustLayoutValue('letterSpacing', -1)}
+                    className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 active:scale-95 transition-all text-slate-600"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <button 
+                    onClick={() => adjustLayoutValue('letterSpacing', 1)}
+                    className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 active:scale-95 transition-all text-slate-600"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+              <input 
+                type="range" min="-10" max="50" step="1"
+                value={state.letterSpacing}
+                onChange={(e) => update('letterSpacing', parseInt(e.target.value))}
+                className="w-full accent-indigo-600 cursor-pointer"
+              />
+            </div>
+
+            {/* Line Spacing Control */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Line Spacing ({state.lineSpacing})</label>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => adjustLayoutValue('lineSpacing', -0.1)}
+                    className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 active:scale-95 transition-all text-slate-600"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <button 
+                    onClick={() => adjustLayoutValue('lineSpacing', 0.1)}
+                    className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 active:scale-95 transition-all text-slate-600"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+              <input 
+                type="range" min="0.5" max="3" step="0.1"
+                value={state.lineSpacing}
+                onChange={(e) => update('lineSpacing', parseFloat(e.target.value))}
+                className="w-full accent-indigo-600 cursor-pointer"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200">
             <label className="text-xs text-slate-600 font-bold">Auto Color Logic</label>
             <input 
               type="checkbox" 
